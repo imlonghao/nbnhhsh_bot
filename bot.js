@@ -43,7 +43,7 @@ async function submitTran(word, text) {
 async function guess(text) {
   const word = text.match(/[a-z0-9]+/g)
   if (word === null) {
-    return '找不到相关信息'
+    return ': 找不到相关信息'
   }
   const resp = await fetch(`${API}guess`, {
     method: 'POST',
@@ -66,12 +66,15 @@ async function guess(text) {
     }
   })
   if (x === '') {
-    x = '找不到相关信息'
+    x = ': 找不到相关信息'
   }
   return x
 }
 
 async function handleRequest(request) {
+  if (request.method !== "POST") {
+    return new Response()
+  }
   const bot = new Telegram(TOKEN)
   const update = await request.json()
   if (update.inline_query) {
