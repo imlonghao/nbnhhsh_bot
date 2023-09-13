@@ -94,6 +94,9 @@ async function handleRequest(request) {
   }
   if (update.message) {
     const message = update.message
+    if (message.text === undefined) {
+      return new Response()
+    }
     const command = message.text.split(' ')
     switch (command[0]) {
       case '/start':
@@ -131,7 +134,7 @@ class Telegram {
   }
   async sendMessage(chat_id, text, parse_mode, disable_web_page_preview, disable_notification,
     reply_to_message_id, reply_markup) {
-    return await fetch(this.api + '/sendMessage', {
+    await fetch(this.api + '/sendMessage', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -146,9 +149,10 @@ class Telegram {
         reply_markup: reply_markup
       })
     })
+    return new Response()
   }
   async answerInlineQuery(inline_query_id, results) {
-    return await fetch(this.api + '/answerInlineQuery', {
+    await fetch(this.api + '/answerInlineQuery', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -158,5 +162,6 @@ class Telegram {
         results: results
       })
     })
+    return new Response()
   }
 }
