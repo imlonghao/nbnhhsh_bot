@@ -1,0 +1,16 @@
+[package]
+name = "nbnhhsh_bot"
+version = "0.1.0"
+edition = "2021"
+authors = ["imlonghao"]
+license = "MIT"
+
+[dependencies]
+teloxide = { version = "0.12", features = ["macros"] }
+log = "0.4"
+pretty_env_logger = "0.5.0"
+tokio = { version = "1.8", features = ["rt-multi-thread", "macros"] }
+reqwest = { version = "0.11", features = ["json"] }
+actix-rt = "2.9.0"
+serde = "1.0.197"
+regex = "1.10.3"
