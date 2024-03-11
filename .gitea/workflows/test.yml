@@ -1,0 +1,19 @@
+name: Test on push
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup rust
+        uses: ATiltedTree/setup-rust@v1
+        with:
+          rust-version: nightly
+      - name: Run tests
+        run: cargo test
