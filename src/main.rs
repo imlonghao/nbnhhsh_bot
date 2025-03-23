@@ -25,6 +25,25 @@ async fn main() {
     pretty_env_logger::init();
     log::info!("Starting bot...");
 
+    let _guard = match std::env::var("SENTRY_DSN") {
+        Ok(dsn) => {
+            log::info!("Sentry DSN found, initializing Sentry...");
+            let guard = sentry::init((
+                dsn,
+                sentry::ClientOptions {
+                    release: sentry::release_name!(),
+                    ..Default::default()
+                },
+            ));
+            log::info!("Sentry initialized successfully");
+            Some(guard)
+        },
+        Err(_) => {
+            log::warn!("Sentry DSN not found, continuing without error tracking");
+            None
+        },
+    };
+
     let bot = Bot::from_env();
 
     let handler = dptree::entry()
