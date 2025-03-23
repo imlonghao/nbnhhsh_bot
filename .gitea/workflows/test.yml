@@ -14,6 +14,6 @@ jobs:
       - name: Setup rust
         uses: https://github.com/actions-rust-lang/setup-rust-toolchain@9399c7bb15d4c7d47b27263d024f0a4978346ba4 # v1.11.0
         with:
-          rust-version: nightly
+          toolchain: nightly
       - name: Run tests
         run: cargo test
