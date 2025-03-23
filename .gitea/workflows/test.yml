@@ -15,5 +15,6 @@ jobs:
         uses: https://github.com/actions-rust-lang/setup-rust-toolchain@9399c7bb15d4c7d47b27263d024f0a4978346ba4 # v1.11.0
         with:
           toolchain: nightly
+          target: x86_64-unknown-linux-musl
       - name: Run tests
         run: cargo test
