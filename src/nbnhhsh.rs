@@ -19,17 +19,20 @@ pub struct GuessResponse {
 pub async fn guess(text: String) -> Result<GuessResponseRoot, reqwest::Error> {
     let re = Regex::new(r"[a-zA-Z0-9]+").unwrap();
     let words: Vec<&str> = re.captures_iter(&*text).filter_map(|x| x.get(0)).map(|x| x.as_str()).collect();
+    let query_text = words.join(",");
 
+    log::debug!("[nbnhhsh::guess] sending request to API, words={:?}", query_text);
     let mut body = HashMap::new();
-    body.insert("text", words.join(","));
+    body.insert("text", query_text.clone());
     let client = reqwest::Client::new();
     let resp = client.post(API.to_owned() + "/guess")
         .json(&body)
         .send()
-        .await?
-        .json::<GuessResponseRoot>()
         .await?;
-    Ok(resp)
+    log::debug!("[nbnhhsh::guess] API response status={} for words={:?}", resp.status(), query_text);
+    let result = resp.json::<GuessResponseRoot>().await?;
+    log::debug!("[nbnhhsh::guess] parsed {} items", result.len());
+    Ok(result)
 }
 
 #[cfg(test)]

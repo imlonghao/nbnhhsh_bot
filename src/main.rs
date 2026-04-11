@@ -58,24 +58,33 @@ async fn main() {
 }
 
 async fn nbnhhsh_process(q: String, bot: Bot, msg: Message) -> Result<(), Box<dyn Error + Send + Sync>> {
-    let guess_result = nbnhhsh::guess(q).await.unwrap();
-    let mut reply: String = "".to_string();
-    guess_result.iter().for_each(|x| {
-        let mut descrition = "找不到相关信息".to_string();
-        if x.trans.len() > 0 {
-            descrition = x.trans.join(", ");
-        } else if x.inputting.len() > 0 {
-            descrition = format!("(?) {}", x.inputting.join(", "));
+    log::debug!("[nbnhhsh_process] querying: {}", q);
+    match nbnhhsh::guess(q.clone()).await {
+        Ok(guess_result) => {
+            log::info!("[nbnhhsh_process] got {} results for query: {}", guess_result.len(), q);
+            let mut reply: String = "".to_string();
+            guess_result.iter().for_each(|x| {
+                let mut descrition = "找不到相关信息".to_string();
+                if x.trans.len() > 0 {
+                    descrition = x.trans.join(", ");
+                } else if x.inputting.len() > 0 {
+                    descrition = format!("(?) {}", x.inputting.join(", "));
+                }
+                let m = format!("{}: {}\n", x.name, descrition);
+                reply += &*m;
+            });
+            if reply == "" {
+                reply = "无数据".to_string();
+            }
+            bot.send_message(msg.chat.id, reply)
+                .reply_to_message_id(msg.id)
+                .await?;
         }
-        let m = format!("{}: {}\n", x.name, descrition);
-        reply += &*m;
-    });
-    if reply == "" {
-        reply = "无数据".to_string();
+        Err(e) => {
+            log::error!("[nbnhhsh_process] API error for query '{}': {}", q, e);
+            return Err(Box::new(e));
+        }
     }
-    bot.send_message(msg.chat.id, reply)
-        .reply_to_message_id(msg.id)
-        .await?;
     Ok(())
 }
 
@@ -85,10 +94,14 @@ async fn message_handler(
     me: Me,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
     if let Some(text) = msg.text() {
-        println!("[msg][{}] {}", msg.from().unwrap().id, text);
+        let user_id = msg.from().map(|u| u.id.to_string()).unwrap_or_else(|| "unknown".to_string());
+        let username = msg.from().and_then(|u| u.username.clone()).unwrap_or_else(|| "unknown".to_string());
+        let chat_id = msg.chat.id;
+        log::info!("[msg] user_id={} username={} chat_id={} text={:?}", user_id, username, chat_id, text);
 
         match BotCommands::parse(text, me.username()) {
             Ok(Command::Start) | Ok(Command::Help) => {
+                log::debug!("[msg] handling help/start command for user_id={}", user_id);
                 bot.send_message(
                     msg.chat.id, Command::descriptions().to_string())
                     .reply_to_message_id(msg.id)
@@ -108,9 +121,20 @@ async fn inline_query_handler(
     bot: Bot,
     q: InlineQuery,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
-    println!("[inline][{}] {}", q.from.id, q.query);
+    let user_id = q.from.id;
+    let username = q.from.username.clone().unwrap_or_else(|| "unknown".to_string());
+    log::info!("[inline] user_id={} username={} query={:?}", user_id, username, q.query);
 
-    let guess_result = nbnhhsh::guess(q.query).await.unwrap();
+    let guess_result = match nbnhhsh::guess(q.query.clone()).await {
+        Ok(result) => {
+            log::info!("[inline] got {} results for query: {}", result.len(), q.query);
+            result
+        }
+        Err(e) => {
+            log::error!("[inline] API error for query '{}': {}", q.query, e);
+            return Err(Box::new(e));
+        }
+    };
     let mut resp_payload: Vec<InlineQueryResult> = vec![];
 
     guess_result.iter().for_each(|x| {
